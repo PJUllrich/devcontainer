@@ -31,3 +31,6 @@ storage.googleapis.com
 # VS Code
 .visualstudio.com
 .vscode.blob.core.windows.net
+
+# Firewall verification (exact match — subdomains are blocked)
+google.com

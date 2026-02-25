@@ -48,16 +48,24 @@ fi
 # --- Generate regex domain list for ssl_bump filtering ---
 # Squid's ssl::server_name with .domain.com only matches subdomains, not the
 # bare domain. And it rejects having both forms in one ACL. So we convert to
-# regex patterns: .github.com -> (^|\.)github\.com$
+# regex patterns:
+#   .github.com  -> (^|\.)github\.com$   (domain + subdomains)
+#   google.com   -> ^google\.com$         (exact match only)
 SSL_REGEX="/etc/squid/allowed-ssl-domains.regex"
 > "$SSL_REGEX"
 while IFS= read -r line; do
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
     [[ -z "${line// }" ]] && continue
-    # Strip leading dot, escape dots for regex
-    bare="${line#.}"
-    escaped="${bare//./\\.}"
-    echo "(^|\\.)${escaped}$" >> "$SSL_REGEX"
+    if [[ "$line" == .* ]]; then
+        # Leading dot: match domain and all subdomains
+        bare="${line#.}"
+        escaped="${bare//./\\.}"
+        echo "(^|\\.)${escaped}$" >> "$SSL_REGEX"
+    else
+        # No leading dot: exact domain match only
+        escaped="${line//./\\.}"
+        echo "^${escaped}$" >> "$SSL_REGEX"
+    fi
 done < /etc/squid/allowed-domains.txt
 echo "Generated $(wc -l < "$SSL_REGEX") SSL regex rules"
 
@@ -151,6 +159,20 @@ if ! curl --connect-timeout 5 https://claude.ai >/dev/null 2>&1; then
     exit 1
 else
     echo "PASS: claude.ai reachable"
+fi
+
+if ! curl --connect-timeout 5 https://google.com >/dev/null 2>&1; then
+    echo "ERROR: Firewall verification failed - unable to reach https://google.com"
+    exit 1
+else
+    echo "PASS: google.com reachable (exact match)"
+fi
+
+if curl --connect-timeout 5 https://foo.google.com >/dev/null 2>&1; then
+    echo "ERROR: Firewall verification failed - was able to reach https://foo.google.com"
+    exit 1
+else
+    echo "PASS: foo.google.com blocked (subdomain of exact match)"
 fi
 
 echo "Firewall configuration complete"

@@ -1,0 +1,14 @@
+# Files and directories to hide from the devcontainer.
+#
+# Matched paths are shadowed with empty bind mounts so the container
+# sees an empty file (or empty directory) while the host is unaffected.
+# Patterns are matched with `find` inside /workspace.
+#
+# Supported syntax:
+#   .env              Exact filename in the project root
+#   .env.*            Glob pattern in the project root
+#   config/.env       Path relative to the project root
+#   **/.env           Recursive match (any depth)
+
+.env
+.env.*

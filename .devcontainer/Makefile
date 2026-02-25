@@ -1,4 +1,4 @@
-.PHONY: list dc.up dc.rebuild dc.down dc.shell dc.claude dc.tidewave dc.logs.proxy dc.server dc.test
+.PHONY: list dc.up dc.rebuild dc.down dc.shell dc.claude dc.tidewave dc.tidewave.bg dc.logs.proxy dc.server dc.test
 
 list:
 	@printf "  %-22s  %s\n" \
@@ -13,6 +13,7 @@ list:
 		"# Commands to run inside the devcontainer" "" \
 		"make dc.claude"         "Run Claude Code (with --dangerously-skip-permissions)" \
 		"make dc.tidewave"       "Run Tidewave (exposed on localhost:9833)" \
+		"make dc.tidewave.bg"    "Run Tidewave in the background" \
 		"make dc.server"         "Starts the Phoenix server inside an IEx session" \
 		"make dc.test"           "Runs the test suite using 'mix test'" \
 		"make dc.logs.proxy" "Print proxy logs (debug denied requests)" \
@@ -36,6 +37,9 @@ dc.claude:
 
 dc.tidewave:
 	tidewave --allow-remote-access --allowed-origins http://localhost:9833
+
+dc.tidewave.bg:
+	@$(MAKE) dc.tidewave > /tmp/tidewave.log 2>&1 & echo "Tidewave started (pid $$!). Logs: /tmp/tidewave.log"
 
 dc.logs.proxy:
 	tail -f /var/log/squid/access.log

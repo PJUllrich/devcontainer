@@ -14,25 +14,23 @@
     "DATABASE_HOST": "host.docker.internal",
   },
   // Add any ports that you want to forward from the devcontainer to localhost here.
-  // It adds the Phoenix (4000) and Tidewave (9832) ports by default but maps Tidewave to `localhost:9833` (not 9832)
+  // Currently adds the Phoenix (4000) and Tidewave (9832) ports but maps Tidewave to `localhost:9833` (not 9832)
   // to avoid clashes with your local Tidewave installation.
-  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "-p", "4000:4000", "-p", "9833:9832"],
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--cap-add=SYS_ADMIN", "-p", "4000:4000", "-p", "9833:9832"],
   // Default configuration (baked in at container creation)
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
-    "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
-    "MIX_ENV": "dev",
     "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
   },
   "remoteUser": "dev",
   "mounts": [
     "source=devcontainer-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
     "source=devcontainer-mix-${devcontainerId},target=/home/dev/.mix,type=volume",
     "source=devcontainer-hex-${devcontainerId},target=/home/dev/.hex,type=volume",
   ],
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh && /usr/local/bin/link-claude-project.sh",
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh && sudo /usr/local/bin/init-file-protection.sh",
   "waitFor": "postStartCommand",
 }

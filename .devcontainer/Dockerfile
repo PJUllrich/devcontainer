@@ -115,9 +115,10 @@ RUN if [ "$INSTALL_TIDEWAVE" = "true" ]; then \
 # Copy config files and scripts (late to maximize cache hits)
 COPY setup/squid.conf /etc/squid/squid.conf
 COPY allowed-domains.txt /etc/squid/allowed-domains.txt
-COPY setup/init-firewall.sh setup/link-claude-project.sh /usr/local/bin/
+COPY protected-paths.txt /etc/devcontainer/protected-paths.txt
+COPY setup/init-firewall.sh setup/init-file-protection.sh /usr/local/bin/
 USER root
-RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/link-claude-project.sh && \
-    echo "$USERNAME ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/$USERNAME-firewall && \
+RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/init-file-protection.sh && \
+    echo "$USERNAME ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh, /usr/local/bin/init-file-protection.sh" > /etc/sudoers.d/$USERNAME-firewall && \
     chmod 0440 /etc/sudoers.d/$USERNAME-firewall
 USER $USERNAME
