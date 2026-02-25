@@ -1,5 +1,10 @@
-# GitHub
+# Firewall verification domains - ideally you don't remove them, but if you do
+# you must replace them with existing domains in the verification step of the `init-firewall.sh` script
+google.com
 .github.com
+.claude.ai
+
+# GitHub
 .githubusercontent.com
 .githubassets.com
 .github.io
@@ -9,7 +14,6 @@
 
 # Anthropic (Claude)
 .anthropic.com
-.claude.ai
 .claude.com
 storage.googleapis.com
 
@@ -32,5 +36,4 @@ storage.googleapis.com
 .visualstudio.com
 .vscode.blob.core.windows.net
 
-# Firewall verification (exact match — subdomains are blocked)
-google.com
+

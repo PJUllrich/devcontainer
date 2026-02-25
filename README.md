@@ -1,8 +1,12 @@
-# devcontainer
+# An Elixir Devcontainer for Phoenix, Claude Code, and Tidewave
 
 A devcontainer for Elixir and Phoenix development with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and optionally [Tidewave](https://tidewave.dev/).
 
-The container runs Claude with `--dangerously-skip-permissions` behind a network firewall that restricts all outbound traffic to an allowlist of domains. This lets Claude operate autonomously without permission prompts while preventing it from reaching arbitrary endpoints.
+The container makes it safe(-er) to run Claude with `--dangerously-skip-permissions` by:
+* Restricting all outbound traffic to a domain allowlist via a 
+strict network firewall
+* Hiding sensitive files (e.g. `.env`) from Claude using file permissions, with Claude deny rules as a secondary safeguard
+* Isolating Claude state in a per-project `.claude` folder, separate from your host's `~/.claude`
 
 ## Quick start
 
@@ -18,7 +22,7 @@ echo 'include .devcontainer/Makefile' > Makefile
 5. Customize the allowed domains in `allowed-domains.txt`
 6. Run `make dc.up` to start the container, then `make dc.shell` to open a shell inside it.
 7. Run `make dc.claude` to start Claude in unsafe mode.
-8. To run Tidewave, start your app with `make dc.server` or `mix phx.server` and run `make dc.tidewave.bg` to start Tidewave in the background (exposed on [localhost:9833](http://localhost:9833)).
+8. To access Tidewave, run `make dc.tidewave.bg` to start Tidewave in the background (exposed on [localhost:9833](http://localhost:9833)) and then start your app with `make dc.server` or `mix phx.server`.
 
 ## Makefile commands
 
@@ -151,10 +155,12 @@ The firewall reduces the attack surface significantly but is not a complete sand
 - **No general sudo:** The `dev` user only has scoped sudo access for the firewall init script. Claude cannot escalate privileges to flush iptables rules or modify system configuration. If you need general sudo for ad-hoc tasks, you can add it back in the Dockerfile, but this weakens the firewall guarantee.
 - **Runtime environment variables:** The `.env` deny rules prevent reading `.env` *files*, but secrets injected via `remoteEnv` are still visible through `printenv` or `/proc/self/environ`. Avoid putting highly sensitive secrets in `remoteEnv` if this is a concern.
 - **Non-HTTP protocols:** The firewall only restricts ports 80 and 443. Traffic on other ports (other than DNS and localhost) is blocked by the default DROP policy, but if you add custom allow rules, those channels are unfiltered.
+- **No Git inside the container:** Git operations (commit, push, pull) must be done on your host machine. The container is for development and running Claude only.
 
 ## Design decisions
 
 **npm install over the native Claude installer:** Claude Code is installed via `npm install -g @anthropic-ai/claude-code` rather than the native install script. The npm install is faster and produces a cacheable Docker layer.
+
 ## Customizing the base image
 
 The Dockerfile uses `hexpm/elixir` as the base image. To change the Elixir or OTP version, edit the build args at the top of `.devcontainer/Dockerfile`:
