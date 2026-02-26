@@ -8,6 +8,15 @@ strict network firewall
 * Hiding sensitive files (e.g. `.env`) from Claude using file permissions, with Claude deny rules as a secondary safeguard
 * Isolating Claude state in a per-project `.claude` folder, separate from your host's `~/.claude`
 
+## Download
+
+Run this from your project root to download only the `.devcontainer/` directory:
+
+```bash
+curl -sL https://github.com/PJUllrich/devcontainer/archive/refs/heads/main.tar.gz \
+  | tar xz --strip-components=1 devcontainer-main/.devcontainer
+```
+
 ## Quick start
 
 > Requires the [devcontainer CLI](https://github.com/devcontainers/cli) (`npm install -g @devcontainers/cli`).
@@ -27,6 +36,52 @@ echo 'include .devcontainer/Makefile' > Makefile
 ## Makefile commands
 
 Run `make list` to see all available commands.
+
+## Git
+
+Git is available inside the container with `safe.directory` pre-configured for `/workspace` and all worktree paths. Credentials are forwarded automatically by the devcontainer CLI when your host has a Git credential helper configured (e.g. `gh auth`). The zsh prompt shows git branch and status by default.
+
+## Git Worktrees
+
+Worktrees let you work on multiple branches simultaneously with isolated file changes but shared mix/hex caches. They live under `.worktrees/` in the project root and sync to your host via the bind mount.
+
+### Managing worktrees
+
+```bash
+# Create a worktree (new branch from HEAD)
+make dc.worktree.new feature-x
+
+# Create a worktree branching from main
+make dc.worktree.new feature-x main
+
+# List all worktrees
+make dc.worktree.list
+
+# Switch to a worktree
+wt feature-x
+
+# Return to the main workspace
+wt
+
+# Remove a worktree
+make dc.worktree.remove feature-x
+```
+
+### Running multiple Claude instances in parallel
+
+Open multiple shells and run Claude in different worktrees — each instance works on its own branch with isolated file changes:
+
+```bash
+# Terminal 1
+make dc.shell
+wt feature-auth
+make dc.claude
+
+# Terminal 2
+make dc.shell
+wt feature-billing
+make dc.claude
+```
 
 ## Adding allowed domains
 
@@ -155,7 +210,6 @@ The firewall reduces the attack surface significantly but is not a complete sand
 - **No general sudo:** The `dev` user only has scoped sudo access for the firewall init script. Claude cannot escalate privileges to flush iptables rules or modify system configuration. If you need general sudo for ad-hoc tasks, you can add it back in the Dockerfile, but this weakens the firewall guarantee.
 - **Runtime environment variables:** The `.env` deny rules prevent reading `.env` *files*, but secrets injected via `remoteEnv` are still visible through `printenv` or `/proc/self/environ`. Avoid putting highly sensitive secrets in `remoteEnv` if this is a concern.
 - **Non-HTTP protocols:** The firewall only restricts ports 80 and 443. Traffic on other ports (other than DNS and localhost) is blocked by the default DROP policy, but if you add custom allow rules, those channels are unfiltered.
-- **No Git inside the container:** Git operations (commit, push, pull) must be done on your host machine. The container is for development and running Claude only.
 
 ## Design decisions
 

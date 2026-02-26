@@ -14,6 +14,8 @@ ARG TZ
 ENV TZ="$TZ"
 
 # Install basic development tools, iptables/ipset, and build dependencies
+# Note: uses gcc/make/libc-dev instead of build-essential to save ~50-80MB.
+# If NIF compilation fails, switch back to build-essential.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     less \
     git \
@@ -28,15 +30,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ipset \
     iproute2 \
     jq \
-    vim \
+    vim-tiny \
     locales \
-    build-essential \
+    gcc \
+    make \
+    libc-dev \
     inotify-tools \
     nodejs \
     npm \
     squid-openssl \
+    && ln -sf /usr/bin/vim.tiny /usr/bin/vim \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen \
     && update-ca-certificates \
+    && rm -rf /usr/share/doc /usr/share/man /usr/share/info \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV LANG=en_US.UTF-8
@@ -80,10 +86,13 @@ USER $USERNAME
 # Install Hex and Rebar
 RUN mix local.hex --force && mix local.rebar --force
 
+# Allow git operations in /workspace and all worktree paths
+RUN git config --global --add safe.directory '*'
+
 # Set the default shell to zsh
 ENV SHELL=/bin/zsh
 
-# Set the default editor
+# Set the default editor (vim.tiny is symlinked to vim)
 ENV EDITOR=vim
 ENV VISUAL=vim
 
@@ -95,12 +104,15 @@ RUN sh -c "$(curl -fsSL https://github.com/deluan/zsh-in-docker/releases/downloa
     -p mix \
     -p https://github.com/zsh-users/zsh-autosuggestions \
     -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
-    -x
+    -x \
+    && echo 'autoload -Uz compinit && compinit -i' >> /home/dev/.zshrc \
+    && echo "zstyle ':completion:*:make:*' tag-order targets" >> /home/dev/.zshrc \
+    && echo 'wt() { cd /workspace/.worktrees/$1 2>/dev/null || cd /workspace; }' >> /home/dev/.zshrc
 
 # Install Claude Code via npm (faster and cacheable)
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
 ENV NPM_CONFIG_PREFIX=/home/$USERNAME/.local
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code && npm cache clean --force
 
 # Install Tidewave CLI (optional, disable with INSTALL_TIDEWAVE=false)
 ARG INSTALL_TIDEWAVE

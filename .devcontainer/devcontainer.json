@@ -20,7 +20,7 @@
   // Default configuration (baked in at container creation)
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
-    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "false",
   },
   "remoteUser": "dev",
   "mounts": [
