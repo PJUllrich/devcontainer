@@ -1,4 +1,4 @@
-.PHONY: list dc.up dc.rebuild dc.down dc.shell dc.claude dc.tidewave dc.tidewave.bg dc.tidewave.stop dc.logs.proxy dc.server dc.test dc.worktree.new dc.worktree.list dc.worktree.remove
+.PHONY: list dc.up dc.stop dc.rebuild dc.down dc.shell dc.claude dc.tidewave dc.tidewave.bg dc.tidewave.stop dc.logs.proxy dc.server dc.test dc.worktree.new dc.worktree.list dc.worktree.remove
 
 list:
 	@printf "  %-22s  %s\n" \
@@ -6,6 +6,7 @@ list:
 		"" "" \
 		"# Commands to run inside your project" "" \
 		"make dc.up"             "Start the devcontainer" \
+		"make dc.stop"           "Stop the devcontainer (keeps container)" \
 		"make dc.rebuild"        "Rebuild and start the devcontainer" \
 		"make dc.down"           "Stop and remove the devcontainer" \
 		"make dc.shell"          "Open a shell inside the devcontainer" \
@@ -17,7 +18,8 @@ list:
 		"make dc.tidewave.stop"  "Stop background Tidewave" \
 		"make dc.server"         "Starts the Phoenix server inside an IEx session" \
 		"make dc.test"           "Runs the test suite using 'mix test'" \
-		"make dc.logs.proxy"     "Print proxy logs (debug denied requests)" \
+		"make dc.logs.proxy"     "Print proxy logs" \
+		"make dc.logs.tidewave"  "Print tidewave logs" \
 		"" "" \
 		"# Worktree commands (run inside the devcontainer)" "" \
 		"make dc.worktree.new feature-x"      "Create worktree for branch feature-x (from HEAD)" \
@@ -31,8 +33,12 @@ list:
 dc.up:
 	devcontainer up --workspace-folder .
 
+dc.stop:
+	docker stop $$(docker ps -aqf "label=devcontainer.local_folder=$(CURDIR)")
+
 dc.rebuild:
-	devcontainer up --workspace-folder . --remove-existing-container
+	@$(MAKE) dc.down
+	devcontainer up --workspace-folder .
 
 dc.down:
 	docker rm -f $$(docker ps -aqf "label=devcontainer.local_folder=$(CURDIR)")
@@ -54,6 +60,9 @@ dc.tidewave.stop:
 
 dc.logs.proxy:
 	tail -f /var/log/squid/access.log
+
+dc.logs.tidewave:
+	tail -f /tmp/tidewave.log
 
 dc.server:
 	iex -S mix phx.server

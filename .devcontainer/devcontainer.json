@@ -4,7 +4,7 @@
     "dockerfile": "Dockerfile",
     "args": {
       "TZ": "${localEnv:TZ:America/Los_Angeles}",
-      "ZSH_IN_DOCKER_VERSION": "1.2.0",
+      "ZSH_IN_DOCKER_VERSION": "1.2.1",
     },
   },
   // Project-specific environment variables (refreshed on each restart)
@@ -24,10 +24,7 @@
   },
   "remoteUser": "dev",
   "mounts": [
-    "source=devcontainer-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=${localWorkspaceFolder}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
-    "source=devcontainer-mix-${devcontainerId},target=/home/dev/.mix,type=volume",
-    "source=devcontainer-hex-${devcontainerId},target=/home/dev/.hex,type=volume",
   ],
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",

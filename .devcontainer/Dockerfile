@@ -74,8 +74,8 @@ WORKDIR /workspace
 # Initialize Squid directories, certs, and SSL database (stable, rarely changes)
 RUN mkdir -p /var/log/squid /var/spool/squid && chown -R proxy:proxy /var/log/squid /var/spool/squid && chmod 755 /var/log/squid \
     && openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
-       -subj "/CN=squid-bump" \
-       -keyout /etc/squid/bump.key -out /etc/squid/bump.crt \
+    -subj "/CN=squid-bump" \
+    -keyout /etc/squid/bump.key -out /etc/squid/bump.crt \
     && chown proxy:proxy /etc/squid/bump.* && chmod 600 /etc/squid/bump.* \
     && /usr/lib/squid/security_file_certgen -c -s /var/spool/squid/ssl_db -M 4MB \
     && chown -R proxy:proxy /var/spool/squid/ssl_db
@@ -97,7 +97,7 @@ ENV EDITOR=vim
 ENV VISUAL=vim
 
 # Default powerline10k theme
-ARG ZSH_IN_DOCKER_VERSION=1.2.0
+ARG ZSH_IN_DOCKER_VERSION=1.2.1
 RUN sh -c "$(curl -fsSL https://github.com/deluan/zsh-in-docker/releases/download/v${ZSH_IN_DOCKER_VERSION}/zsh-in-docker.sh)" -- \
     -p git \
     -p fzf \
