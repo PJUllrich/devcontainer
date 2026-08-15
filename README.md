@@ -1,6 +1,6 @@
 # An Elixir Devcontainer for Phoenix, Claude Code, and Tidewave
 
-A devcontainer for Elixir and Phoenix development with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and optionally [Tidewave](https://tidewave.dev/).
+A devcontainer for Elixir and Phoenix development with optional [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Codex, Rust, Bun, and [Tidewave](https://tidewave.dev/).
 
 The container makes it safe(-er) to run Claude with `--dangerously-skip-permissions` by:
 * Restricting all outbound traffic to a domain allowlist via a 
@@ -9,8 +9,6 @@ strict network firewall
 * Isolating Claude state in a per-project `.claude` folder, separate from your host's `~/.claude`
 
 ## Quick start
-
-> Requires the [devcontainer CLI](https://github.com/devcontainers/cli) (`npm install -g @devcontainers/cli`).
 
 1. Copy the `.devcontainer/` directory into your Elixir project root with:
 ```bash
@@ -24,9 +22,23 @@ echo 'include .devcontainer/Makefile' > Makefile
 3. Add project-specific environment variables in `devcontainer.json`
 4. Customize the protected filepaths in `protected-paths.txt`
 5. Customize the allowed domains in `allowed-domains.txt`
-6. Run `make dc.up` to start the container, then `make dc.shell` to open a shell inside it.
-7. Run `make dc.claude` to start Claude in unsafe mode.
-8. To access Tidewave, run `make dc.tidewave.bg` to start Tidewave in the background (exposed on [localhost:9833](http://localhost:9833)) and then start your app with `make dc.server` or `mix phx.server`.
+6. Enable any optional tools you need as described below.
+7. Run `make dc.up` to start the container, then `make dc.shell` to open a shell inside it.
+8. If enabled, run `make dc.claude` to start Claude in unsafe mode.
+9. To access Tidewave, run `make dc.tidewave.bg` to start Tidewave in the background (exposed on [localhost:9833](http://localhost:9833)) and then start your app with `make dc.server` or `mix phx.server`.
+
+## Optional tools
+
+Rust, Bun, Codex, and Claude Code default to disabled to keep the image small. Enable the tools you need by changing their build arguments at the top of `.devcontainer/Dockerfile` to `true` before building:
+
+```dockerfile
+ARG INSTALL_RUST=true
+ARG INSTALL_BUN=true
+ARG INSTALL_CODEX=true
+ARG INSTALL_CLAUDE_CODE=true
+```
+
+Rust and Bun versions are pinned by the adjacent `RUST_VERSION` and `BUN_VERSION` arguments.
 
 ## Makefile commands
 
@@ -114,7 +126,6 @@ The container connects to your host's Postgres instance assumed to run in Docker
 ```elixir
 # config/dev.exs **and** config/test.exs
 config :my_app, MyApp.Repo,
-  # other configs
   hostname: System.get_env("DATABASE_HOST", "localhost")
 ```
 
@@ -122,71 +133,7 @@ The `devcontainer.json` sets `DATABASE_HOST` to `host.docker.internal` via `remo
 
 ## Git
 
-Git is available inside the container with `safe.directory` pre-configured for `/workspace` and all worktree paths. Credentials are forwarded automatically by the devcontainer CLI when your host has a Git credential helper configured (e.g. `gh auth`). The zsh prompt shows git branch and status by default.
-
-## Git Worktrees
-
-Worktrees let you work on multiple branches simultaneously with isolated file changes but shared mix/hex caches. They live under `.worktrees/` in the project root and sync to your host via the bind mount.
-
-### Managing worktrees
-
-```bash
-# Create a worktree (new branch from HEAD)
-make dc.worktree.new feature-x
-
-# Create a worktree branching from main
-make dc.worktree.new feature-x main
-
-# List all worktrees
-make dc.worktree.list
-
-# Switch to a worktree
-wt feature-x
-
-# Return to the main workspace
-wt
-
-# Remove a worktree
-make dc.worktree.remove feature-x
-```
-
-### Running multiple Claude instances in parallel
-
-Open multiple shells and run Claude in different worktrees — each instance works on its own branch with isolated file changes:
-
-```bash
-# Terminal 1
-make dc.shell
-wt feature-auth
-make dc.claude
-
-# Terminal 2
-make dc.shell
-wt feature-billing
-make dc.claude
-```
-
-## Disabling Tidewave
-
-To disable Tidewave, make two changes:
-
-1. In `.devcontainer/Dockerfile`, set the build arg to `false`:
-
-   ```dockerfile
-   ARG INSTALL_TIDEWAVE=false
-   ```
-
-2. In `.devcontainer/devcontainer.json`, remove the Tidewave port mapping from `runArgs`:
-
-   ```jsonc
-   // Before
-   "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "-p", "4000:4000", "-p", "9833:9832"],
-
-   // After
-   "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "-p", "4000:4000"],
-   ```
-
-Then rebuild with `make dc.rebuild`.
+Git is available inside the container with `safe.directory` pre-configured for `/workspace` and all worktree paths. Credentials are forwarded automatically by the devcontainer CLI when your host has a Git credential helper configured (e.g. `gh auth`).
 
 ## How the firewall works
 
@@ -208,14 +155,14 @@ The firewall reduces the attack surface significantly but is not a complete sand
 
 ## Design decisions
 
-**npm install over the native Claude installer:** Claude Code is installed via `npm install -g @anthropic-ai/claude-code` rather than the native install script. The npm install is faster and produces a cacheable Docker layer.
+**npm install over the native Claude installer:** When enabled, Claude Code is installed via `npm install -g @anthropic-ai/claude-code` rather than the native install script. The npm install is faster and produces a cacheable Docker layer.
 
 ## Customizing the base image
 
 The Dockerfile uses `hexpm/elixir` as the base image. To change the Elixir or OTP version, edit the build args at the top of `.devcontainer/Dockerfile`:
 
 ```dockerfile
-ARG ELIXIR_VERSION=1.19.5
-ARG OTP_VERSION=28.3.2
-ARG DEBIAN_VERSION=trixie-20260202-slim
+ARG ELIXIR_VERSION=1.20.3
+ARG OTP_VERSION=29.0.5
+ARG DEBIAN_VERSION=trixie-20260803-slim
 ```
